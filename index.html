@@ -18,6 +18,12 @@ var width = canvas.width;
 var height = canvas.height;
 var origin = [0, 0];
 
+var inputKeys = {
+    x1: 0,
+    y1: 0,
+    y2: 0
+}
+
 var robot = {
     x: 0,
     y: 0,
@@ -33,6 +39,11 @@ var scalec = 20
 
 function scaleV(vec) {
     var ret = [scalec*vec[0], scalec*vec[1]];
+    return ret;
+}
+
+function scalev(co, vec) {
+    var ret = [co*vec[0], co*vec[1]];
     return ret;
 }
 
@@ -107,6 +118,11 @@ function crotate(vec, heading) {
     return [x2, y2];
 }
 
+var flscale = 1
+var frscale = 1
+var blscale = 1
+var brscale = 1
+
 function inputToDrive(input) {
     var x1 = input[0]
     var y1 = input[1]
@@ -121,10 +137,10 @@ function inputToDrive(input) {
     // neg or pos then save that as a vec
     // might have to use rotation transform so that it works for other ones
     //besides forwards
-    var flvec = ccwrotate(motorToVec(fl), 225);
-    var frvec = ccwrotate(motorToVec(fr), 315);
-    var blvec = ccwrotate(motorToVec(bl), 135);
-    var brvec = ccwrotate(motorToVec(br), 45);
+    var flvec = ccwrotate(scalev(flscale, motorToVec(fl)), 225);
+    var frvec = ccwrotate(scalev(frscale, motorToVec(fr)), 315);
+    var blvec = ccwrotate(scalev(blscale, motorToVec(bl)), 135);
+    var brvec = ccwrotate(scalev(brscale, motorToVec(br)), 45);
     //c.clearRect(-canvas.width/2, canvas.height/2, canvas.width, canvas.height);
     //c.clearRect(-100, 100, canvas.width, canvas.height);
     c.save();
@@ -151,7 +167,6 @@ function inputToDrive(input) {
     var newx = robot.x + robot.speed * final[0]
     var newy = robot.y + robot.speed * final[1]
 
-    console.log(origin[0] - width/2)
     if ((newx - scaledSquare) > (origin[0] - width/2) &&
             (newx + scaledSquare) < (origin[0] + width/2)) {
         robot.x += robot.speed * final[0]
@@ -163,6 +178,9 @@ function inputToDrive(input) {
 }
 c.transform(1, 0, 0, -1, width/2, height/2)
 
+function clip(number, min, max) {
+  return Math.max(min, Math.min(number, max));
+}
 
 function getMouse(evt) {
     var rect = control.getBoundingClientRect();
@@ -195,17 +213,138 @@ function controlClickUp(e) {
 control.onmousedown = controlClickDown;
 control.onmouseup = controlClickUp;
 
+var keyboard = false
+var w = false
+var a = false
+var s = false
+var d = false
+var j = false
+var l = false
+
+document.addEventListener('keydown', function(event) {
+    keyboard = true
+    if(event.keyCode == 87) {
+        // w
+        w = true
+    }
+    if(event.keyCode == 65) {
+        // a
+        a = true
+    }
+    if(event.keyCode == 83) {
+        // s
+        s = true
+    }
+    if(event.keyCode == 68) {
+        // d
+        d = true
+    }
+    if(event.keyCode == 74) {
+        // j
+        j = true
+    }
+    if(event.keyCode == 76) {
+        // l
+        l = true
+    }
+});
+
+document.addEventListener('keyup', function(event) {
+    var dec = .6
+    if(event.keyCode == 87) {
+        // w
+        w = false
+        inputKeys.y1 = dec * inputKeys.y1
+    }
+    if(event.keyCode == 65) {
+        // a
+        a = false
+        inputKeys.x1 = dec * inputKeys.x1
+    }
+    if(event.keyCode == 83) {
+        // s
+        s = false
+        inputKeys.y1 = dec * inputKeys.y1
+    }
+    if(event.keyCode == 68) {
+        // d
+        d = false
+        inputKeys.x1 = dec * inputKeys.x1
+    }
+    if(event.keyCode == 74) {
+        // j
+        j = false
+        inputKeys.x2 = -dec
+    }
+    if(event.keyCode == 76) {
+        // l
+        l = false
+        inputKeys.x2 = dec
+    }
+    if (!w && !a && !s && !d && !j && !l) {
+        keyboard = false
+    }
+});
+
 var raf;
+var acc = .05
 
 function draw() {
     cc.clearRect(0, 0, control.width, control.height);
-    if (moving) {
+    if (keyboard) {
+        if (a) {
+            inputKeys.x1 -= acc
+        } else if (d) {
+            inputKeys.x1 += acc
+        } 
+
+        if (w) {
+            inputKeys.y1 += acc
+        } else if (s) {
+            inputKeys.y1 -= acc
+        }
+
+        if (j) {
+            inputKeys.x2 -= acc
+        } else if (l) {
+            inputKeys.x2 += acc
+        }
+
+        inputKeys.x1 = clip(inputKeys.x1, -1, 1)
+        inputKeys.y1 = clip(inputKeys.y1, -1, 1)
+        inputKeys.x2 = clip(inputKeys.x2, -1, 1)
+
+        //var circles = [scale(20, inputKeys.x1), scale(20, inputKeys.y1)]
+        var circles = distance([25,25], [20 * inputKeys.x1, 20 * inputKeys.y1])
+        console.log(circles)
+        circle(cc, circles, 5);//scaleV(20, circles), 5);
+        var input = [inputKeys.x1, inputKeys.y1, inputKeys.x2]
+        var rotated = ccwrotate(input, 0)
+        inputToDrive([rotated[0], rotated[1], 0])
+    } else if (moving) {
         circle(cc, [mouse.x, mouse.y], 5);
         var input = scale2(1/20, distance([25,25], [mouse.x, mouse.y]))
         var rotated = ccwrotate(input, 0)
         inputToDrive([rotated[0], rotated[1], 0])
     } else {
-        inputToDrive([0, 0, 0]);
+        if (Math.abs(inputKeys.x1) < .1) {
+            inputKeys.x1 = 0
+        } else if (inputKeys.x1 > 0) {
+            inputKeys.x1 -= acc
+        } else if (inputKeys.x1 < 0) {
+            inputKeys.x1 += acc
+        }
+
+        if (Math.abs(inputKeys.y1) < .1) {
+            inputKeys.y1 = 0
+        } else if (inputKeys.y1 > 0) {
+            inputKeys.y1 -= acc
+        } else if (inputKeys.y1 < 0) {
+            inputKeys.y1 += acc
+        }
+
+        inputToDrive([inputKeys.x1, inputKeys.y1, 0]);
+        //inputToDrive([0, 0, 0]);
         circle(cc, [25, 25], 5);
     }
     raf = window.requestAnimationFrame(draw);
@@ -215,4 +354,3 @@ draw();
 </script>
 </body>
 </html>
-
