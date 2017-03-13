@@ -6,6 +6,18 @@
 <body>
 <canvas id="c" width="500" height="500"></canvas>
 <canvas id="control" width="50" height="50"></canvas>
+<br />
+fl: 
+<input id="fl" />
+<br />
+fr: 
+<input id="fr" />
+<br />
+bl: 
+<input id="bl" />
+<br />
+br: 
+<input id="br" />
 <style type="text/css">
 canvas { border: 1px solid black; }
 </style>
@@ -285,6 +297,26 @@ document.addEventListener('keyup', function(event) {
         keyboard = false
     }
 });
+
+
+var flinput = document.getElementById("fl")
+var frinput = document.getElementById("fr")
+var blinput = document.getElementById("bl")
+var brinput = document.getElementById("br")
+
+flinput.addEventListener("input", function(event) {
+    flscale = parseFloat(this.value)
+    console.log(flscale)
+})
+frinput.addEventListener("input", function(event) {
+    frscale = parseFloat(this.value)
+})
+blinput.addEventListener("input", function(event) {
+    blscale = parseFloat(this.value)
+})
+brinput.addEventListener("input", function(event) {
+    brscale = parseFloat(this.value)
+})
 
 var raf;
 var acc = .05
