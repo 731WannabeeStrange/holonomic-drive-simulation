@@ -7,6 +7,8 @@
 <canvas id="c" width="500" height="500"></canvas>
 <canvas id="control" width="50" height="50"></canvas>
 <br />
+linear rotation transformation: <input type="checkbox" id="linear-transformation">
+<br />
 fl: 
 <input id="fl" />
 <br />
@@ -23,6 +25,7 @@ canvas { border: 1px solid black; }
 </style>
 <script>
 var canvas = document.getElementById('c');
+var linearRotation = document.getElementById('linear-transformation')
 var c = canvas.getContext('2d');
 var control = document.getElementById('control');
 var cc = control.getContext('2d');
@@ -398,12 +401,22 @@ function draw() {
         var circles = distance([0,0], [20 * inputKeys.x1, 20 * inputKeys.y1])
         circle(cc, circles, 5);
         var input = [inputKeys.x1, inputKeys.y1, inputKeys.x2]
-        var rotated = crotate(input, 0)
+        if (linearRotation.checked) {
+            var angle = rotation    
+        } else {
+            var angle = 0
+        }
+        var rotated = crotate(input, angle)
         inputToDrive([rotated[0], rotated[1], 0])
     } else if (moving) {
         circle(cc, [mouse.x, mouse.y], 5);
         var input = scale2(1/20, distance([0, 0], [mouse.x, mouse.y]))
-        var rotated = crotate(input, 0)
+        if (linearRotation.checked) {
+            var angle = rotation    
+        } else {
+            var angle = 0
+        }
+        var rotated = crotate(input, angle)
         inputToDrive([rotated[0], rotated[1], 0])
     } else {
         if (Math.abs(inputKeys.x1) < .1) {
