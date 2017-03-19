@@ -339,17 +339,28 @@ var blinput = document.getElementById("bl")
 var brinput = document.getElementById("br")
 
 flinput.addEventListener("input", function(event) {
-    flscale = parseFloat(this.value)
-        console.log(flscale)
+    var parsed = parseFloat(this.value)
+    if (!isNaN(parsed)) {
+        flscale = parsed
+    }
 })
 frinput.addEventListener("input", function(event) {
-    frscale = parseFloat(this.value)
+    var parsed = parseFloat(this.value)
+    if (!isNaN(parsed)) {
+        flscale = parsed
+    }
 })
 blinput.addEventListener("input", function(event) {
-    blscale = parseFloat(this.value)
+    var parsed = parseFloat(this.value)
+    if (!isNaN(parsed)) {
+        flscale = parsed
+    }
 })
 brinput.addEventListener("input", function(event) {
-    brscale = parseFloat(this.value)
+    var parsed = parseFloat(this.value)
+    if (!isNaN(parsed)) {
+        flscale = parsed
+    }
 })
 
 var raf;
