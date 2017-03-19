@@ -29,6 +29,7 @@ var cc = control.getContext('2d');
 var width = canvas.width;
 var height = canvas.height;
 var origin = [0, 0];
+var rotation = 0
 
 var inputKeys = {
     x1: 0,
@@ -36,11 +37,8 @@ var inputKeys = {
     y2: 0
 }
 
-var robot = {
-    x: 0,
-    y: 0,
-    speed: 3
-}
+var robot = [0,0]
+robot_speed = 3
 
 var mouse = {
     x: 0,
@@ -70,16 +68,21 @@ function add(vec1, vec2) {
     return [vec1[0] + vec2[0], vec1[1] + vec2[1]]
 }
 
-function line(start, vec) {
-    var end = add(start, vec)
+function line(vec) {
+    var end = add(vec[0], vec[1])
     c.beginPath();
-    c.moveTo(start[0], start[1]);
+    c.moveTo(vec[0][0], vec[0][1]);
     c.lineTo(end[0], end[1]);
     c.stroke();
     c.closePath();
-    circle(c, end, 5)
     // eventually add arrows
     // linear rotation multiplied by each of the triangle vectors
+}
+
+function drawVec(vec) {
+    var end = add(vec[0], vec[1])
+    line([vec[0], vec[1]])
+    circle(c, end, 5)
 }
 
 function circle(can, start, radius) {
@@ -90,9 +93,10 @@ function circle(can, start, radius) {
 }
 
 function motorDrive(frontLeft, frontRight, backLeft, backRight) {
-    var final = add(add(frontLeft, frontRight), add(backLeft, backRight))
-    line([robot.x, robot.y], scaleV(final))
-    return final;
+    var final = add(add(frontLeft[1], frontRight[1]), add(backLeft[1],
+                backRight[1]))
+    drawVec([robot, final])
+    return scale2(1/scalec, final)
 }
 
 function motorToVec(power) {
@@ -130,6 +134,21 @@ function crotate(vec, heading) {
     return [x2, y2];
 }
 
+function move(vec, newOrigin) {
+    var diff = distance(origin, newOrigin)
+    var added = add(vec[0], diff)
+    return [added, vec[1]]
+}
+
+function relativeRotate(start, end, newOrigin, rotation) {
+    var regular_rotation = [ccwrotate(start, rotation), ccwrotate(end, rotation)]
+    return move(regular_rotation, newOrigin)
+}
+
+function relativeRobotRotate(start, end) {
+    return relativeRotate(start, end, robot, rotation)
+}
+
 var flscale = 1
 var frscale = 1
 var blscale = 1
@@ -149,46 +168,63 @@ function inputToDrive(input) {
     // neg or pos then save that as a vec
     // might have to use rotation transform so that it works for other ones
     //besides forwards
-    var flvec = ccwrotate(scalev(flscale, motorToVec(fl)), 225);
-    var frvec = ccwrotate(scalev(frscale, motorToVec(fr)), 315);
-    var blvec = ccwrotate(scalev(blscale, motorToVec(bl)), 135);
-    var brvec = ccwrotate(scalev(brscale, motorToVec(br)), 45);
-    //c.clearRect(-canvas.width/2, canvas.height/2, canvas.width, canvas.height);
-    //c.clearRect(-100, 100, canvas.width, canvas.height);
+    var flMotor = ccwrotate(scalev(flscale, motorToVec(fl)), 225)
+    var frMotor = ccwrotate(scalev(frscale, motorToVec(fr)), 315)
+    var blMotor = ccwrotate(scalev(blscale, motorToVec(bl)), 135)
+    var brMotor = ccwrotate(scalev(brscale, motorToVec(br)), 45)
+
     c.save();
     c.setTransform(1,0,0,1,0,0);
-    // Will always clear the right space
     c.clearRect(0,0,c.canvas.width,c.canvas.height);
     c.restore();
-    line([robot.x - scaledSquare, robot.y + scaledSquare], scaleV(flvec))
-    line([robot.x + scaledSquare, robot.y + scaledSquare], scaleV(frvec))
-    line([robot.x - scaledSquare, robot.y - scaledSquare], scaleV(blvec))
-    line([robot.x + scaledSquare, robot.y - scaledSquare], scaleV(brvec))
 
-    var final = motorDrive(flvec, frvec, blvec, brvec)
-    c.beginPath();
-    c.arc(robot.x, robot.y, 10, 0, Math.PI * 2, true);
-    c.stroke()
-    c.closePath()
-    var rectangle = new Path2D();
-    rectangle.rect(robot.x - scaledSquare, robot.y - scaledSquare,
-            2*scaledSquare,
-            2*scaledSquare);
-    c.stroke(rectangle)
+    var flRotated = relativeRobotRotate([-scaledSquare, scaledSquare], scaleV(flMotor))
+    var frRotated = relativeRobotRotate([scaledSquare, scaledSquare], scaleV(frMotor))
+    var blRotated = relativeRobotRotate([-scaledSquare, -scaledSquare], scaleV(blMotor))
+    var brRotated = relativeRobotRotate([scaledSquare, -scaledSquare], scaleV(brMotor))
 
-    var newx = robot.x + robot.speed * final[0]
-    var newy = robot.y + robot.speed * final[1]
+    drawVec(flRotated)
+    drawVec(frRotated)
+    drawVec(blRotated)
+    drawVec(brRotated)
 
+    var final = motorDrive(flRotated, frRotated, blRotated, brRotated)
+
+    circle(c, robot, 10)
+
+    var top = relativeRobotRotate([-scaledSquare, scaledSquare], 
+            [2*scaledSquare, 0])
+    var bottom = relativeRobotRotate([-scaledSquare, -scaledSquare],
+            [2*scaledSquare, 0])
+    var left = relativeRobotRotate([-scaledSquare, scaledSquare],
+            [0, -2*scaledSquare])
+    var right = relativeRobotRotate([scaledSquare, scaledSquare],
+            [0, -2*scaledSquare])
+
+    line(top)
+    line(bottom)
+    line(left)
+    line(right)
+
+    var newx = robot[0] + robot_speed * final[0]
+    var newy = robot[1] + robot_speed * final[1]
     if ((newx - scaledSquare) > (origin[0] - width/2) &&
             (newx + scaledSquare) < (origin[0] + width/2)) {
-        robot.x += robot.speed * final[0]
+        robot[0] = newx
     }
     if ((newy + scaledSquare) < (origin[1] + height/2) &&
             (newy - scaledSquare) > (origin[1] - height/2)) {
-        robot.y += robot.speed * final[1]
+        robot[1] = newy
     }
+    var motorSum = fl * flscale + fr * frscale + bl * blscale + br * brscale
+    if (motorSum != 0) {
+        rotation += motorSum * (1/2)
+    }
+    console.log(rotation)
 }
+
 c.transform(1, 0, 0, -1, width/2, height/2)
+cc.transform(1, 0, 0, -1, control.width/2, control.height/2)
 
 function clip(number, min, max) {
   return Math.max(min, Math.min(number, max));
@@ -196,14 +232,12 @@ function clip(number, min, max) {
 
 function getMouse(evt) {
     var rect = control.getBoundingClientRect();
-    mouse.x = Math.round((evt.clientX-rect.left)/(rect.right-rect.left)*control.width)
-    mouse.y = Math.round((evt.clientY-rect.top)/(rect.bottom-rect.top)*control.height)
+    mouse.x = evt.clientX - rect.left - control.width/2
+    mouse.y = -1 * (evt.clientY - rect.top - control.height/2)
 }
 
-//cc.transform(1, 0, 0, -1, 50/2, 50/2)
-
 function distance(start, end) {
-    return [end[0] - start[0], -end[1] + start[1]]
+    return [end[0] - start[0], end[1] - start[1]]
 }
 
 function scale2(scalar, vec) {
@@ -234,7 +268,7 @@ var j = false
 var l = false
 
 document.addEventListener('keydown', function(event) {
-    keyboard = true
+    keyboard = false
     if(event.keyCode == 87) {
         // w
         w = true
@@ -306,7 +340,7 @@ var brinput = document.getElementById("br")
 
 flinput.addEventListener("input", function(event) {
     flscale = parseFloat(this.value)
-    console.log(flscale)
+        console.log(flscale)
 })
 frinput.addEventListener("input", function(event) {
     frscale = parseFloat(this.value)
@@ -322,7 +356,11 @@ var raf;
 var acc = .05
 
 function draw() {
-    cc.clearRect(0, 0, control.width, control.height);
+    cc.save();
+    cc.setTransform(1,0,0,1,0,0);
+    cc.clearRect(0,0,control.width,control.height);
+    cc.restore();
+
     if (keyboard) {
         if (a) {
             inputKeys.x1 -= acc
@@ -346,17 +384,15 @@ function draw() {
         inputKeys.y1 = clip(inputKeys.y1, -1, 1)
         inputKeys.x2 = clip(inputKeys.x2, -1, 1)
 
-        //var circles = [scale(20, inputKeys.x1), scale(20, inputKeys.y1)]
-        var circles = distance([25,25], [20 * inputKeys.x1, 20 * inputKeys.y1])
-        console.log(circles)
-        circle(cc, circles, 5);//scaleV(20, circles), 5);
+        var circles = distance([0,0], [20 * inputKeys.x1, 20 * inputKeys.y1])
+        circle(cc, circles, 5);
         var input = [inputKeys.x1, inputKeys.y1, inputKeys.x2]
-        var rotated = ccwrotate(input, 0)
+        var rotated = crotate(input, 0)
         inputToDrive([rotated[0], rotated[1], 0])
     } else if (moving) {
         circle(cc, [mouse.x, mouse.y], 5);
-        var input = scale2(1/20, distance([25,25], [mouse.x, mouse.y]))
-        var rotated = ccwrotate(input, 0)
+        var input = scale2(1/20, distance([0, 0], [mouse.x, mouse.y]))
+        var rotated = crotate(input, 0)
         inputToDrive([rotated[0], rotated[1], 0])
     } else {
         if (Math.abs(inputKeys.x1) < .1) {
@@ -375,9 +411,20 @@ function draw() {
             inputKeys.y1 += acc
         }
 
-        inputToDrive([inputKeys.x1, inputKeys.y1, 0]);
+        if (Math.abs(inputKeys.x2) < .1) {
+            inputKeys.x2 = 0
+        } else if (inputKeys.y1 > 0) {
+            inputKeys.x2 -= acc
+        } else if (inputKeys.y1 < 0) {
+            inputKeys.x2 += acc
+        }
+
+        //inputToDrive([inputKeys.x1, inputKeys.y1, inputKeys.x2]);
+        var input = [inputKeys.x1, inputKeys.y1]
+        var rotated = crotate(input, 0)
+        inputToDrive([rotated[0], rotated[1], 0])
         //inputToDrive([0, 0, 0]);
-        circle(cc, [25, 25], 5);
+        circle(cc, [0, 0], 5);
     }
     raf = window.requestAnimationFrame(draw);
 }
