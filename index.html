@@ -2,37 +2,116 @@
 <html>
 <head>
 <title>Holonomic Drive Robot Test</title>
+<style>
+html, body, * {
+    margin: 0px auto;
+    box-sizing: border-box;
+}
+.heading {
+    text-align: center;
+    width: 100%;
+    padding: 20px;
+    font-family: "Helvetica";
+    background-color: orange;
+    font-size: 30px;
+    color: blue;
+    height: 80px;
+}
+#c {
+    width: 50%;
+    height: 100%;
+    border: none;
+    float: left;
+}
+.column {
+    padding-top: 100px;
+    padding-left: 100px;
+    width: 50%;
+    float: left;
+}
+#control {
+    width: 50px;
+    height: 50px;
+    border: 1px solid black;
+}
+</style>
 </head>
 <body>
-<canvas id="c" width="500" height="500"></canvas>
+<div class="heading">Team 731 Holonomic Simulator</div>
+<div id="cdiv2">
+<div>
+<div class="column"> 
+    <h1> How To Use </h1>
+<ul>
+    <li>
+Click and drag the circle inside the small box like a joystick to move the robot
+around.
+    </li>
+    <li>
+Change the motor values to decimals to show how the robot rotates and drifts
+with less contact.
+    </li>
+    <li>
+Check 'Linear Rotation Transformation' to see how easy it is to drive the robot
+with field oriented drive when it's rotated
+    </li>
+</ul>
+<br />
+<br />
 <canvas id="control" width="50" height="50"></canvas>
 <br />
-linear rotation transformation: <input type="checkbox" id="linear-transformation">
 <br />
-fl: 
+<br />
+Linear Rotation Transformation for Field Oriented Drive: <input type="checkbox" id="linear-transformation">
+<br />
+<br />
+<div class=form">
+<label class="label">
+Front Left Motor: 
+</label>
 <input id="fl" />
 <br />
-fr: 
+<label>
+Front Right Motor: 
+</label>
 <input id="fr" />
 <br />
-bl: 
+<label>
+Back Left Motor: 
+</label>
 <input id="bl" />
 <br />
-br: 
+<label>
+Back Right Motor: 
+</label>
 <input id="br" />
-<style type="text/css">
-canvas { border: 1px solid black; }
-</style>
+<br />
+</div>
+</div>
+<canvas id="c" width="500" height="500"></canvas>
+</div>
+</div>
 <script>
 var canvas = document.getElementById('c');
 var linearRotation = document.getElementById('linear-transformation')
 var c = canvas.getContext('2d');
+c.canvas.width = 2 * window.innerWidth/4;
+c.canvas.height = window.innerHeight;
 var control = document.getElementById('control');
 var cc = control.getContext('2d');
 var width = canvas.width;
 var height = canvas.height;
 var origin = [0, 0];
 var rotation = 0
+var flinput = document.getElementById("fl")
+var frinput = document.getElementById("fr")
+var blinput = document.getElementById("bl")
+var brinput = document.getElementById("br")
+
+flinput.value = 1
+frinput.value = 1
+blinput.value = 1
+brinput.value = 1
 
 var inputKeys = {
     x1: 0,
@@ -335,11 +414,6 @@ document.addEventListener('keyup', function(event) {
     }
 });
 
-
-var flinput = document.getElementById("fl")
-var frinput = document.getElementById("fr")
-var blinput = document.getElementById("bl")
-var brinput = document.getElementById("br")
 
 flinput.addEventListener("input", function(event) {
     var parsed = parseFloat(this.value)
