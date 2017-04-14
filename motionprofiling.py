@@ -60,8 +60,8 @@ def derivative(values, time, smooth):
 
     return derivs
 
-distance = 2 # feet
-max_acc = 3 # feet/sec^2
+distance = 1 # feet
+max_acc = 5 # feet/sec^2
 
 diagonal_distance = math.sqrt(2)*distance/2
 
@@ -95,20 +95,25 @@ a = vacceleration(x)
 v = vvelocity(x)
 p = vposition(x)
 derived_position = np.array(log[1])
-derived_velocity = derivative(derived_position, x, 30)
-derived_acceleration = derivative(derived_velocity, x, 30)
+derived_velocity = derivative(derived_position, x, 10)
+derived_acceleration = derivative(derived_velocity, x, 10)
 d_p = derived_position
 d_v = np.append(derived_velocity, [0])
 d_a = np.append(derived_acceleration, [0, 0])
 
 plt.plot(x, v, 'b-')
-plt.plot(x, a, 'r-')
+#plt.plot(x, a, 'r-')
 plt.plot(x, p, 'g-')
 plt.plot(x, d_v, 'b-')
-plt.plot(x, d_a, 'r-')
+#plt.plot(x, d_a, 'r-')
 plt.plot(x, d_p, 'g-')
 plt.ylabel('feet')
 plt.xlabel('time')
+
+with open(date_string + '-motionpro.csv', 'w', newline='') as csvfile:
+    csv_file = csv.writer(csvfile)
+    for time, value in zip(log[0], log[1]):
+        csv_file.writerow([time, value])
 
 plt.savefig(date_string + ".png")
 

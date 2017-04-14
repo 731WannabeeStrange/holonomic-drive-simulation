@@ -4,6 +4,7 @@ import subprocess
 import math
 import datetime
 date_string = datetime.datetime.now().strftime("%Y-%m-%d-%H:%M")
+import csv
 
 def clear():
     subprocess.run(['adb', 'logcat', '-c'], stdout=subprocess.PIPE)
@@ -15,6 +16,7 @@ def get_log():
 def process_log(log):
     a = []
     b = []
+    c = []
     lines = log.split('\n')
     for q, line in enumerate(lines):
         if len(line) != 0:
@@ -35,8 +37,13 @@ def process_log(log):
                             b.append(float(data[i]))
                         else:
                             b.append(0)
+                    elif i == 2:
+                        if 'E' not in data[i]:
+                            c.append(float(data[i]))
+                        else:
+                            c.append(0)
 
-    return [a, b]
+    return [a, b, c]
 
 def derivative(values, time, smooth):
     derivs = []
@@ -68,6 +75,11 @@ clear()
 plt.plot(log[0], log[1], 'b-')
 plt.ylabel('cpns')
 plt.xlabel('time')
+
+with open(date_string + '-shooter.csv', 'w', newline='') as csvfile:
+    csv = csv.writer(csvfile)
+    for time, value in zip(log[0], log[2]):
+        csv.writerow([time, value])
 
 plt.savefig(date_string + ".png")
 
